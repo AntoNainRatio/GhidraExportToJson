@@ -41,7 +41,7 @@ Une fonction trop grande est découpée en plusieurs entrées :
 }
 ```
 
-Avec `0`, aucune fonction n'est découpée.
+Avec `0` (dans la boîte de dialogue ou en argument headless), aucune fonction n'est découpée.
 
 ## Installation
 
@@ -56,7 +56,7 @@ Avec `0`, aucune fonction n'est découpée.
 2. Dans le Script Manager, lancer `ExportToSiftrank.py`.
 3. Saisir la taille maximale (en caractères de code décompilé) au-delà de laquelle une fonction est découpée :
    - `8000` est la valeur suggérée ;
-   - `0` désactive le filtre ;
+   - `0` désactive le découpage : toutes les fonctions sont gardées entières, même énormes ;
    - annuler la boîte de dialogue utilise 8000.
 4. Le chemin du fichier JSON et le nombre d'entrées exportées, de fonctions découpées et de fonctions ignorées s'affichent dans la console.
 

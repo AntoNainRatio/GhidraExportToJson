@@ -93,9 +93,16 @@ def ask_max_code_size():
         return int(args[0])
     try:
         return askInt("Max function size",
-                      "Split functions whose decompiled code exceeds N characters (0 = no limit, suggested {}):".format(DEFAULT_MAX_CODE_SIZE))
+                      "Split functions whose decompiled code exceeds N characters (0 = never split, keep huge functions whole; suggested {}):".format(DEFAULT_MAX_CODE_SIZE))
     except CancelledException:
         return DEFAULT_MAX_CODE_SIZE
+
+def skip_entry(func, reason):
+    return {
+        "name": func.getName(),
+        "address": "0x" + func.getEntryPoint().toString(),
+        "reason": reason
+    }
 
 def run():
     max_code_size = ask_max_code_size()
@@ -108,12 +115,12 @@ def run():
     all_funcs = func_manager.getFunctions(True)
 
     count = 0
-    skipped = 0
+    skipped = []
     split = 0
 
     for func in all_funcs:
         if func.isThunk() or func.isExternal():
-            skipped += 1
+            skipped.append(skip_entry(func, "external" if func.isExternal() else "thunk"))
             continue
 
         result = decompiler.decompileFunction(func, 30, monitor)
@@ -145,7 +152,10 @@ def run():
                 })
             count += 1
         else:
-            skipped += 1
+            reason = "decompile failed"
+            if result is not None and result.getErrorMessage():
+                reason += ": " + result.getErrorMessage()
+            skipped.append(skip_entry(func, reason))
 
     out_dir = os.path.expanduser("~/siftrank_exports")
     if not os.path.exists(out_dir):
@@ -157,7 +167,14 @@ def run():
     with open(out_path, "w") as f:
         json.dump(functions, f, indent=2)
 
+    skipped_path = os.path.join(out_dir, program_name + "_skipped.json")
+    with open(skipped_path, "w") as f:
+        json.dump(skipped, f, indent=2)
+
+    for s in skipped:
+        print("Skipped {} ({}): {}".format(s["name"], s["address"], s["reason"]))
     print("Exported {} entries from {} functions ({} split into parts, {} skipped) to {}".format(
-        len(functions), count, split, skipped, out_path))
+        len(functions), count, split, len(skipped), out_path))
+    print("Skipped functions listed in {}".format(skipped_path))
 
 run()
